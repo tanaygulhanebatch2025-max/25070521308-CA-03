@@ -1,0 +1,15 @@
+node_modules/
+client/node_modules/
+server/node_modules/
+dist/
+client/dist/
+server/dist/
+.env
+.env.*
+!.env.example
+!.env.example.*
+server/.env
+client/.env
+.DS_Store
+playground-1.mongodb.js
+.idea/
