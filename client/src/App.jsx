@@ -75,6 +75,14 @@ function App() {
     `${t.title} ${t.category} ${t.note || ''}`.toLowerCase().includes(query.toLowerCase())
   ), [transactions, typeFilter, categoryFilter, query]);
 
+  const toastNotice = toast && (
+    <div className={`toast ${toast.kind}`}>
+      <span>{toast.kind === 'error' ? <AlertCircle size={18}/> : <CheckCircle2 size={18}/>}</span>
+      {toast.message}
+      <button onClick={() => setToast(null)}><X size={15}/></button>
+    </div>
+  );
+
   async function submitAuth(payload) {
     const endpoint = authMode === 'login' ? '/auth/login' : '/auth/register';
     try {
@@ -121,7 +129,7 @@ function App() {
     const a = document.createElement('a'); a.href = url; a.download = `flexi-transactions-${month}.csv`; a.click(); URL.revokeObjectURL(url);
   }
 
-  if (!token) return <AuthScreen mode={authMode} setMode={setAuthMode} onSubmit={submitAuth} />;
+  if (!token) return <><AuthScreen mode={authMode} setMode={setAuthMode} onSubmit={submitAuth} />{toastNotice}</>;
 
   const nav = [
     { title: 'WORKSPACE', items: [{ label: 'Overview', icon: LayoutDashboard }, { label: 'Transactions', icon: ReceiptText }, { label: 'Budgets', icon: Target }] },
@@ -151,7 +159,7 @@ function App() {
       </main>
       {modal?.kind === 'transaction' && <TransactionModal item={modal.item} onClose={() => setModal(null)} onSave={saveTransaction}/>}
       {modal?.kind === 'budget' && <BudgetModal budgets={budgets} onClose={() => setModal(null)} onSave={saveBudget}/>}
-      {toast && <div className={`toast ${toast.kind}`}><span>{toast.kind === 'error' ? <AlertCircle size={18}/> : <CheckCircle2 size={18}/>}</span>{toast.message}<button onClick={() => setToast(null)}><X size={15}/></button></div>}
+      {toastNotice}
     </div>
   );
 }

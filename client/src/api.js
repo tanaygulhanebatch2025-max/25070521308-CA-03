@@ -17,5 +17,9 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
-export const apiError = error => error.response?.data?.message || error.message || 'Something went wrong.';
+export const apiError = error => error.response?.data?.message || (
+  error.response
+    ? 'The API returned an unexpected response.'
+    : 'Cannot reach the FLEXI API. Check that the backend is running on port 5001 and can connect to MongoDB.'
+);
 export default api;

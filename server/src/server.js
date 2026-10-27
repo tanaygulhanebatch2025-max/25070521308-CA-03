@@ -38,11 +38,38 @@ if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 24) {
   console.error('JWT_SECRET must be set to at least 24 characters in server/.env');
   process.exit(1);
 }
+
+function mongoErrorCategory(error) {
+  const message = String(error?.message || '').toLowerCase();
+  if (/auth|credential|password/.test(message)) return 'authentication';
+  if (/ip access|ip address|not in the access|whitelist|not allowed/.test(message)) return 'Atlas access list';
+  if (/tls|ssl|certificate/.test(message)) return 'TLS';
+  if (/dns|srv|enotfound/.test(message)) return 'DNS';
+  if (/timeout|timed out|etimedout/.test(message)) return 'network timeout';
+  if (/reset|refused|unreachable/.test(message)) return 'network connection';
+  return 'unclassified';
+}
+
 try {
+  console.log('Connecting to MongoDB...');
   await mongoose.connect(process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/flexi_expense_tracker');
   console.log('Connected to MongoDB');
   app.listen(port, () => console.log(`FLEXI API listening on http://localhost:${port}`));
 } catch (error) {
-  console.error('Could not connect to MongoDB:', error.message);
+  const errorCode = error.code || error.cause?.code;
+  console.error(`Could not connect to MongoDB (${error.name}${errorCode ? `, ${errorCode}` : ''}).`);
+  const memberErrors = [...(error.reason?.servers?.values?.() || [])]
+    .map(server => server.error)
+    .filter(Boolean);
+  if (memberErrors.length) {
+    const details = [...new Set(memberErrors.map(memberError => {
+      const code = memberError.code || memberError.cause?.code;
+      return `${memberError.name}${code ? ` (${code})` : ''}: ${mongoErrorCategory(memberError)}`;
+    }))];
+    console.error(`MongoDB member errors: ${details.join('; ')}`);
+  } else {
+    console.error(`MongoDB error category: ${mongoErrorCategory(error)}`);
+  }
+  console.error('Check MONGO_URI, Atlas Network Access, and your network or DNS connection.');
   process.exit(1);
 }
